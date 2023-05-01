@@ -98,5 +98,6 @@ DOWNLOADER_MIDDLEWARES = {
 }
 
 SELENIUM_DRIVER_NAME = 'chrome'
-SELENIUM_DRIVER_EXECUTABLE_PATH = 'C:/Users/Joel/Downloads/chromedriver_win32/chromedriver.exe'
+SELENIUM_DRIVER_EXECUTABLE_PATH = '/Users/joel/Downloads/chromedriver_mac_arm64/chromedriver'
+SELENIUM_DRIVER_ARGUMENTS = ['--headless']
 

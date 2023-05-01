@@ -118,9 +118,7 @@ class SeleniumMiddleware(object):
     def process_request(self, request, spider):
         driver = webdriver.Chrome(executable_path=spider.settings['SELENIUM_DRIVER_EXECUTABLE_PATH'])
         driver.get(request.url)
-        body = driver.page_source.encode('utf-8')
-        with open('response.html', 'wb') as f:
-            f.write(HtmlResponse(driver.current_url, body=body, encoding='utf-8', request=request))
+        body = driver.page_source
         return HtmlResponse(driver.current_url, body=body, encoding='utf-8', request=request)
 
     def spider_closed(self, spider):

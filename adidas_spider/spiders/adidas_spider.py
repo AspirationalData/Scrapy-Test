@@ -18,4 +18,24 @@ class MySpider(scrapy.Spider):
 
     def parse(self, response):
         # Use Scrapy selectors to extract data from the page
-        pass
+
+        # response.css('.glass-product-card__assets')
+        # response.css('.glass-product-card__assets a::attr(href)').extract()
+        # response.css('.glass-product-card-container.with-variation-carousel')
+        for entry in response.css('.glass-product-card__assets a::attr(href)').extract():
+            yield SeleniumRequest(url=str('https://www.adidas.es/' + entry), callback=self.parse)
+
+            # For every page, parse colors, size, etc.
+            for entry in response.css('div.slider___3D6S9').extract():
+                yield {
+                    'Colors': response.css('div.slider___3D6S9 img::attr(alt)').getall()
+                }
+
+        # Colors (selects especific color, does not generalize):
+        # Link: https://www.adidas.es/zapatilla-forum-low-cl-x-indigo-herz/IE1855.html
+        # response.css('.variation___u2aRL.selected___1f4ky.variation-selected__color___2zTSy img::attr(alt)').getall()
+
+        # Navigator bar 'universal' class: gl-vspace color-chooser-draggable-bar___ZqytD
+        # Sub-slider class: slider___3D6S9
+
+            
