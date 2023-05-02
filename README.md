@@ -20,62 +20,76 @@ In order to build the scraper, we need to consider the following elements:
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `Adidas`
 
 
     * **Product description.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `response.css('.text-content___13aRm')`
+
+        (This selector needs to be modified)
+
+        For this to work, we need to click to activate the dropdown, otherwise the product description does not show up.
 
 
     * **Product current price.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `response.css('.gl-price-item.notranslate ::text').get()`
+
+        We need to implement additional logic to check if there are 1 or two prices.
+        Depending on the number of prices, we'll decide if it's a "original price" or a "current price".
+
+        
 
     * **Product original price.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `response.css('.gl-price-item.notranslate ::text').get()`
+
+        We need to implement additional logic to check if there are 1 or two prices.
+        Depending on the number of prices, we'll decide if it's a "original price" or a "current price".
 
 
     * **Product availability.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        ``
 
 
     * **A list of all the image URLs.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `response.css('img ::attr(src)').getall()`
 
 
-    * **A unique Identifier for each product.**
+    * **A unique Identifier for each product (SKU).**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall()))`
+
+        The unique identifier changes for each "variation" of the product.
 
 
     * **All available colors for the product.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `response.css('div.slider___3D6S9 img::attr(alt)').getall()`
 
 
     * **All available sizes for the product.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('h1.name___120FN span::text' ).get()`
+        `response.css('.gl-label.size___2lbev span::text').getall()`
 
 
     * **Category paths leading to the product (e.g. Women > Footwear > Running).**

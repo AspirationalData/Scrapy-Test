@@ -28,7 +28,42 @@ class MySpider(scrapy.Spider):
             # For every page, parse colors, size, etc.
             for entry in response.css('div.slider___3D6S9').extract():
                 yield {
-                    'Colors': response.css('div.slider___3D6S9 img::attr(alt)').getall()
+                    'Colors': response.css('div.slider___3D6S9 img::attr(alt)').getall(),
+
+                    # The available size CSS selector needs to be corrected, as it
+                    # not discard non-available items.
+
+                    # Alternative selector:
+                    # response.css('button.gl-label.size___2lbev:not(.size-selector__size--unavailable) span::text').getall()
+                    'Available sizes': response.css('.gl-label.size___2lbev span::text').getall(),
+
+                    # The following CSS selector is supposed to select all
+                    # colors, but for some reason it only selects one of them
+                    'Available colors': response.css('div.slider___3D6S9 img::attr(alt)').getall(),
+
+                    # Extract all SKUs:
+
+                    'SKUs': list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall())),
+
+                    # Extract all image URLs from the product page:
+                    'Image URLs': response.css('img ::attr(src)').getall(),
+
+                    # Extract product current price:
+                    'Current Price': response.css('.gl-price-item.notranslate ::text').get(),
+
+                    # Extract product original price:
+
+                    # Need to implement logic based on the number of items
+                    # under the div class "gl-price gl-price--horizontal notranslate"
+                    # 'Original Price': 
+
+                    # Extract product brand:
+                    'Product Brand': 'Adidas',
+
+                    # Extract product description:
+                    # View issue:
+                    # https://github.com/clemfromspace/scrapy-selenium/issues/85
+                    'Product Description': 'test'
                 }
 
         
@@ -46,7 +81,7 @@ class MySpider(scrapy.Spider):
         # response.css('.variation___u2aRL.selected___1f4ky.variation-selected__color___2zTSy img::attr(alt)').getall()
 
 
-        
+
 
 
         # Scrapy, follow next pages example
