@@ -31,14 +31,22 @@ class MySpider(scrapy.Spider):
                     'Colors': response.css('div.slider___3D6S9 img::attr(alt)').getall()
                 }
 
-        # Colors (selects especific color, does not generalize):
-        # Link: https://www.adidas.es/zapatilla-forum-low-cl-x-indigo-herz/IE1855.html
-        # response.css('.variation___u2aRL.selected___1f4ky.variation-selected__color___2zTSy img::attr(alt)').getall()
+        
 
         # Navigator bar 'universal' class: gl-vspace color-chooser-draggable-bar___ZqytD
         # Sub-slider class: slider___3D6S9
 
+
+
+        ### ELEMENTS ###
         # Breadcrumbs div class: breadcrumb_item___32Yik
+
+        # Colors (selects especific color, does not generalize):
+        # Link: https://www.adidas.es/zapatilla-forum-low-cl-x-indigo-herz/IE1855.html
+        # response.css('.variation___u2aRL.selected___1f4ky.variation-selected__color___2zTSy img::attr(alt)').getall()
+
+
+        
 
 
         # Scrapy, follow next pages example
