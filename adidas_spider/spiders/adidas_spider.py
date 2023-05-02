@@ -27,13 +27,13 @@ class MySpider(scrapy.Spider):
     def start_requests(self):
         for url in self.start_urls:
             yield SeleniumRequest(url=url,
-                                  callback=self.parse_product_pages,
+                                  callback=self.parse_product_directories,
                                   wait_until=EC.element_to_be_clickable((By.ID, 'glass-gdpr-default-consent-accept-button')),
                                   script="document.querySelector('#glass-gdpr-default-consent-accept-button').click();"
                                  )
     
 
-    def parse_product_pages(self, response):
+    def parse_product_directories(self, response):
 
         """
         Parses product pagers and follows the link for each product on the page.
@@ -43,7 +43,7 @@ class MySpider(scrapy.Spider):
         """
         
         for product_url in response.css('.glass-product-card__assets a::attr(href)').extract():
-            yield SeleniumRequest(url= self.base_url + product_url,
+            yield SeleniumRequest(url=self.base_url + product_url,
                                   callback=self.parse)
             
             # Checks if there are more pages avaiable and, if so, follows
@@ -52,7 +52,7 @@ class MySpider(scrapy.Spider):
             next_page = response.css('.pagination__control___3C268.pagination__control--next___329Qo.pagination_margin--next___3H3Zd a::attr(href)').get()
             if next_page is not None:
                 next_page = self.base_url + next_page
-                yield SeleniumRequest(next_page, callback=self.parse)
+                yield SeleniumRequest(url=next_page, callback=self.parse_product_directories)
 
         
         

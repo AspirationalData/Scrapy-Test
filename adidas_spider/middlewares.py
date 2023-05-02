@@ -116,11 +116,14 @@ class SeleniumMiddleware(object):
         return middleware
 
     def process_request(self, request, spider):
-        driver = webdriver.Chrome(executable_path=spider.settings['SELENIUM_DRIVER_EXECUTABLE_PATH'])
-        driver.get(request.url)
-        body = driver.page_source
-        return HtmlResponse(driver.current_url, body=body, encoding='utf-8', request=request)
+        if not hasattr(spider, 'driver'):
+            spider.driver = webdriver.Chrome(executable_path=spider.settings['SELENIUM_DRIVER_EXECUTABLE_PATH'])
+
+        spider.driver.get(request.url)
+        body = spider.driver.page_source
+        return HtmlResponse(spider.driver.current_url, body=body, encoding='utf-8', request=request)
 
     def spider_closed(self, spider):
         spider.logger.info('Closing Selenium webdriver')
-        spider.driver.quit()
+        if hasattr(spider, 'driver'):
+            spider.driver.quit()
