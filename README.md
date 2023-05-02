@@ -33,6 +33,8 @@ In order to build the scraper, we need to consider the following elements:
 
         For this to work, we need to click to activate the dropdown, otherwise the product description does not show up.
 
+        See Github Issue:
+        https://github.com/clemfromspace/scrapy-selenium/issues/85
 
     * **Product current price.**
 
@@ -43,7 +45,7 @@ In order to build the scraper, we need to consider the following elements:
         We need to implement additional logic to check if there are 1 or two prices.
         Depending on the number of prices, we'll decide if it's a "original price" or a "current price".
 
-        
+
 
     * **Product original price.**
 
@@ -96,7 +98,7 @@ In order to build the scraper, we need to consider the following elements:
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('.breadcrumb_item___32Yik span::text').getall()`
+        `response.css('.breadcrumb_item___32Yik a span::text').getall()`
 
         The output needs some cleaning, as there are duplicates in the results.
 
