@@ -7,7 +7,7 @@ from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
-
+import pdb
 
 class MySpider(scrapy.Spider):
 
@@ -63,8 +63,14 @@ class MySpider(scrapy.Spider):
         """
 
         # Click on the button before using CSS selectors.
-        # This will allow us to extract the Description.∫
-        driver = response.request.meta['driver']
+        # This will allow us to extract the Description.
+
+        # driver = response.request.meta.get('driver')
+        # print('Driver:', driver)
+        driver = response.meta['driver']
+
+        pdb.set_trace()
+
         button = driver.find_element(By.ID, 'glass-gdpr-default-consent-accept-button')
         button.click()
 
@@ -98,6 +104,7 @@ class MySpider(scrapy.Spider):
             # Extract all image URLs from the product page:
             'Image URLs': response.css('img ::attr(src)').getall(),
 
+            # All SKUs are present in the product page URL at the end.
             # Extract all SKUs:
             'SKUs': list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall())),
 
