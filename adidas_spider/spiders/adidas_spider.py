@@ -62,11 +62,50 @@ class MySpider(scrapy.Spider):
         Parses product information from product pages.
         """
 
+        # Click on the button before using CSS selectors.
+        # This will allow us to extract the Description.∫
+        driver = response.request.meta['driver']
+        button = driver.find_element(By.ID, 'glass-gdpr-default-consent-accept-button')
+        button.click()
+
+        # Click on Description dropdown.∫
+        button = driver.find_element_by_css_selector('button.accordion__header___3Pii5')
+        button.click()
+
 
         yield {
+            
+            # Extract product title:
+            'Product Title': response.css('.name___120FN span::text').get(),
 
+            # Extract product brand:
+            'Product Brand': 'Adidas',
+
+            # Extract product description:
+            # View issue:
+            # https://github.com/clemfromspace/scrapy-selenium/issues/85
+            'Product Description': ' '.join(response.css('div.text-content___13aRm h3, div.text-content___13aRm p::text').getall()),
+
+            # Extract product current price:
+            'Current Price': response.css('.gl-price-item.notranslate ::text').get(),
+
+            # Extract product original price:
+            'Original Price': response.css('.gl-price-item.notranslate ::text').get(),
+
+            # Extract product availability:
+            'Product Availability': response.css().get(),
+
+            # Extract all image URLs from the product page:
+            'Image URLs': response.css('img ::attr(src)').getall(),
+
+            # Extract all SKUs:
+            'SKUs': list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall())),
+
+
+            # Extract available colors for the product:
             'Colors': response.css('div.slider___3D6S9 img::attr(alt)').getall(),
 
+            # Extract all available sizes:
             # The available size CSS selector needs to be corrected, as it
             # not discard non-available items.
 
@@ -78,34 +117,17 @@ class MySpider(scrapy.Spider):
             # colors, but for some reason it only selects one of them
             'Available colors': response.css('div.slider___3D6S9 img::attr(alt)').getall(),
 
-            # Extract all SKUs:
-            'SKUs': list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall())),
-
-            # Extract all image URLs from the product page:
-            'Image URLs': response.css('img ::attr(src)').getall(),
-
-            # Extract product current price:
-            'Current Price': response.css('.gl-price-item.notranslate ::text').get(),
-
-            # Extract product original price:
-            'Original Price': response.css('.gl-price-item.notranslate ::text').get(),
+                        
 
             # Need to implement logic based on the number of items
             # under the div class "gl-price gl-price--horizontal notranslate"
             # 'Original Price': 
 
-            # Extract product brand:
-            'Product Brand': 'Adidas',
-
-            # Extract product description:
-            # View issue:
-            # https://github.com/clemfromspace/scrapy-selenium/issues/85
-            'Product Description': 'test',
-
+            
             # Extract breadcrumbs:
-            # Yields duplicate values, we'll figure out logic (on the CSS selector or
-            # external logic) to deal with it.
-            'Breadcrumbs': response.css('.breadcrumb_item___32Yik a span::text').getall()
+            'Breadcrumbs': [s for s in response.css('ol[data-auto-id="breadcrumbs-mobile"] span:not([aria-hidden="true"])::text').getall() if "Atrás" not in s and s != "/"]
+            # Previous code : 'Breadcrumbs': response.css('.breadcrumb_item___32Yik a span::text').getall()
+            
         }
 
 
