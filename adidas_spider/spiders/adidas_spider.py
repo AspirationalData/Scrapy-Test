@@ -5,15 +5,18 @@ from scrapy.utils.python import to_bytes
 
 from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import pdb
 
 class MySpider(scrapy.Spider):
 
     """
     Class that defines the spider.
     """
+
+    # Max wait time when trying to load a page
+    DOWNLOAD_TIMEOUT = 45
 
 
     name = 'adidas_spider'
@@ -23,13 +26,20 @@ class MySpider(scrapy.Spider):
     start_urls = ['https://www.adidas.es/hombre?grid=true',
                   'https://www.adidas.es/mujer?grid=true',
                   'https://www.adidas.es/ninos?grid=true']
+    
+    
+    def __init__(self, *args, **kwargs):
+        super(MySpider, self).__init__(*args, **kwargs)
+        self.driver = webdriver.Chrome(executable_path='/Users/joel/Downloads/chromedriver_mac_arm64/chromedriver')
+
 
     def start_requests(self):
         for url in self.start_urls:
             yield SeleniumRequest(url=url,
                                   callback=self.parse_product_directories,
                                   wait_until=EC.element_to_be_clickable((By.ID, 'glass-gdpr-default-consent-accept-button')),
-                                  script="document.querySelector('#glass-gdpr-default-consent-accept-button').click();"
+                                  script="document.querySelector('#glass-gdpr-default-consent-accept-button').click();",
+                                  meta={'driver': self.driver}
                                  )
     
 
@@ -44,7 +54,8 @@ class MySpider(scrapy.Spider):
         
         for product_url in response.css('.glass-product-card__assets a::attr(href)').extract():
             yield SeleniumRequest(url=self.base_url + product_url,
-                                  callback=self.parse)
+                                  callback=self.parse,
+                                  meta={'driver': self.driver})
             
             # Checks if there are more pages avaiable and, if so, follows
             # the link to the next page until there are not any more
@@ -69,14 +80,29 @@ class MySpider(scrapy.Spider):
         # print('Driver:', driver)
         driver = response.meta['driver']
 
-        pdb.set_trace()
+        
+        # The idea here is to wait for the GDPR cookie banner to appear and click on "Accept Cookies"
+        try:
+            # button = driver.find_element(By.ID, 'glass-gdpr-default-consent-accept-button')
+            button = WebDriverWait(driver=driver, timeout=10).until(EC.presence_of_element_located((By.ID, 'glass-gdpr-default-consent-accept-button')))
+            button.click()
+        
+        # WebDriver timeout exception
+        except Exception:
+            pass
 
-        button = driver.find_element(By.ID, 'glass-gdpr-default-consent-accept-button')
-        button.click()
+        
 
-        # Click on Description dropdown.∫
-        button = driver.find_element_by_css_selector('button.accordion__header___3Pii5')
-        button.click()
+        # Click on Description dropdown.
+        try:
+            # button = driver.find_element(By.CSS_SELECTOR, 'button.accordion__header___3Pii5')
+            button = WebDriverWait(driver=driver, timeout=10).until(EC.element_to_be_clickable((By.CLASS_NAME, 'accordion__header___3Pii5')))
+            button.click()
+
+        # WebDriver timeout exception
+        except Exception:
+            pass
+
 
 
         yield {
@@ -90,19 +116,28 @@ class MySpider(scrapy.Spider):
             # Extract product description:
             # View issue:
             # https://github.com/clemfromspace/scrapy-selenium/issues/85
-            'Product Description': ' '.join(response.css('div.text-content___13aRm h3, div.text-content___13aRm p::text').getall()),
+            # 'Product Description': ' '.join(response.css('div.text-content___13aRm h3, div.text-content___13aRm p::text').getall()),
+            'Product Description': response.css('div.text-content___13aRm p::text').get(),
+            # p::text
 
             # Extract product current price:
-            'Current Price': response.css('.gl-price-item.notranslate ::text').get(),
+            # Needs correcting
+            'Current Price': response.css('div.gl-price[data-auto-id="gl-price-item"] > div.gl-price-item::text').getall(),
 
             # Extract product original price:
-            'Original Price': response.css('.gl-price-item.notranslate ::text').get(),
+            'Original Price': response.css('div.gl-price[data-auto-id="gl-price-item"] > div.gl-price-item::text').getall(),
 
+            # From the product where you can select a size, says "True" if there is at least
+            # one size available.
+            # If the product does not have sizes, it says "One-size-fits-all Product"
             # Extract product availability:
-            'Product Availability': response.css().get(),
+            'Product Availability': bool(response.css('div.sizes___2jQjF > button.gl-label.size___2lbev:not([class*="unavailable"]):not([class*="unavailable-crossed"]) > span::text').getall()) if response.css('div.sizes___2jQjF > button.gl-label.size___2lbev > span::text').getall() != [] else 'One-size-fits-all Product',
 
+            # We'll extract all the link of the PRODUCT ITSELF.
             # Extract all image URLs from the product page:
-            'Image URLs': response.css('img ::attr(src)').getall(),
+            # 'Image URLs': response.css('img ::attr(src)').getall(),
+            # Needs to be changed
+            'Image URLs': response.css('').getall(),
 
             # All SKUs are present in the product page URL at the end.
             # Extract all SKUs:
@@ -118,7 +153,8 @@ class MySpider(scrapy.Spider):
 
             # Alternative selector:
             # response.css('button.gl-label.size___2lbev:not(.size-selector__size--unavailable) span::text').getall()
-            'Available sizes': response.css('.gl-label.size___2lbev span::text').getall(),
+            # 'Available sizes': response.css('.gl-label.size___2lbev span::text').getall(),
+            'Available Sizes': response.css('div.sizes___2jQjF > button.gl-label.size___2lbev:not([class*="unavailable"]):not([class*="unavailable-crossed"]) > span::text').getall(),
 
             # The following CSS selector is supposed to select all
             # colors, but for some reason it only selects one of them

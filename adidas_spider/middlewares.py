@@ -121,6 +121,10 @@ class SeleniumMiddleware(object):
 
         spider.driver.get(request.url)
         body = spider.driver.page_source
+
+        # Print statement to check if 'driver' key is present in the request meta
+        print("Testing META GET DRIVER", request.meta.get('driver'))
+
         return HtmlResponse(spider.driver.current_url, body=body, encoding='utf-8', request=request)
 
     def spider_closed(self, spider):
