@@ -94,9 +94,7 @@ class MySpider(scrapy.Spider):
 
         # Click on Description dropdown.
         try:
-            # button = driver.find_element(By.CSS_SELECTOR, 'button.accordion__header___3Pii5')
-            description_slider_button_xpath = '/html/body/div[2]/div/div[1]/div[1]/div/div/div[4]/div/div[3]/section[3]/div/div/button'
-            # description_slider_button_xpath = '//*[@id="navigation-target-description"]/div/button'
+            description_slider_button_xpath = "//button[contains(@class, 'accordion__header___3Pii5')]//h2[contains(@class, 'accordion-title___2sTgR') and text() = 'Descripción']"
             # button = WebDriverWait(driver=driver, timeout=10).until(EC.element_to_be_clickable((By.XPATH, description_slider_button_xpath)))
             element = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, description_slider_button_xpath)))
 
@@ -108,7 +106,6 @@ class MySpider(scrapy.Spider):
 
 
             # button.click()
-            # time.sleep(5)
 
         # WebDriver timeout exception
         except Exception:
@@ -138,9 +135,8 @@ class MySpider(scrapy.Spider):
             # Extract product description:
             # View issue:
             # https://github.com/clemfromspace/scrapy-selenium/issues/85
-            # 'Product Description': ' '.join(response.css('div.text-content___13aRm h3, div.text-content___13aRm p::text').getall()),
-            'Product Description': response.css('div.text-content___13aRm p::text').get(),
-            # p::text
+            # 'Product Description': response.css('div.text-content___13aRm p::text').get(),
+            'Product Description': response.css('.text-content___13aRm p::text' ).getall(),
 
 
             
@@ -183,17 +179,3 @@ class MySpider(scrapy.Spider):
             'Breadcrumbs': [s for s in response.css('ol[data-auto-id="breadcrumbs-mobile"] span:not([aria-hidden="true"])::text').getall() if "Atrás" not in s and s != "/"]
             
         }
-
-
-
-        # Navigator bar 'universal' class: gl-vspace color-chooser-draggable-bar___ZqytD
-        # Sub-slider class: slider___3D6S9
-
-
-
-        ### ELEMENTS ###
-        # Breadcrumbs div class: breadcrumb_item___32Yik
-
-        # Colors (selects especific color, does not generalize):
-        # Link: https://www.adidas.es/zapatilla-forum-low-cl-x-indigo-herz/IE1855.html
-        # response.css('.variation___u2aRL.selected___1f4ky.variation-selected__color___2zTSy img::attr(alt)').getall()
