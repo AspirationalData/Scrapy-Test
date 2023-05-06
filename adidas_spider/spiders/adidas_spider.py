@@ -6,6 +6,7 @@ from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from scrapy.http import HtmlResponse
 
 
 class MySpider(scrapy.Spider):
@@ -95,23 +96,27 @@ class MySpider(scrapy.Spider):
         # Click on Description dropdown.
         try:
             description_slider_button_xpath = "//button[contains(@class, 'accordion__header___3Pii5')]//h2[contains(@class, 'accordion-title___2sTgR') and text() = 'Descripción']"
-            # button = WebDriverWait(driver=driver, timeout=10).until(EC.element_to_be_clickable((By.XPATH, description_slider_button_xpath)))
             element = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, description_slider_button_xpath)))
-
-            # Re-parse page source to scrape the items.
-
 
             # Click on the element
             driver.execute_script("arguments[0].click();", element)
 
+            # Wait 2 seconds.
+            time.sleep(2)
 
-            # button.click()
+            # Re-parse the page source to scrape the new content
+            new_content = driver.page_source
+            response = HtmlResponse(url=driver.current_url, body=new_content, encoding='utf-8')
+            
 
         # WebDriver timeout exception
         except Exception:
             pass
 
-        
+        # Variable that parses product description.
+        # product_description = response.css('.text-content___13aRm p::text').get()
+        product_description = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.text-content___13aRm p')))
+
         # Variable that shows Current Price and Original Price.
         current_product_prices_array = response.xpath('//*[@id="main-content"]/div/div[1]/div[2]/div/div/div').xpath('string()').get().replace('€', '').strip().split()
 
@@ -135,10 +140,7 @@ class MySpider(scrapy.Spider):
             # Extract product description:
             # View issue:
             # https://github.com/clemfromspace/scrapy-selenium/issues/85
-            # 'Product Description': response.css('div.text-content___13aRm p::text').get(),
-            'Product Description': response.css('.text-content___13aRm p::text' ).getall(),
-
-
+            'Product Description': product_description.text.strip(),
             
             # Current Product price extraction logic:
 
