@@ -1,7 +1,6 @@
 import scrapy
 from selenium import webdriver
-from scrapy.http import HtmlResponse
-from scrapy.utils.python import to_bytes
+import time
 
 from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.common.by import By
@@ -82,28 +81,51 @@ class MySpider(scrapy.Spider):
 
         
         # The idea here is to wait for the GDPR cookie banner to appear and click on "Accept Cookies"
-        try:
+        # try:
             # button = driver.find_element(By.ID, 'glass-gdpr-default-consent-accept-button')
-            button = WebDriverWait(driver=driver, timeout=10).until(EC.presence_of_element_located((By.ID, 'glass-gdpr-default-consent-accept-button')))
-            button.click()
+            # button = WebDriverWait(driver=driver, timeout=10).until(EC.presence_of_element_located((By.ID, 'glass-gdpr-default-consent-accept-button')))
+            # button.click()
         
         # WebDriver timeout exception
-        except Exception:
-            pass
+        # except Exception:
+        #     pass
 
         
 
         # Click on Description dropdown.
         try:
             # button = driver.find_element(By.CSS_SELECTOR, 'button.accordion__header___3Pii5')
-            button = WebDriverWait(driver=driver, timeout=10).until(EC.element_to_be_clickable((By.CLASS_NAME, 'accordion__header___3Pii5')))
-            button.click()
+            description_slider_button_xpath = '/html/body/div[2]/div/div[1]/div[1]/div/div/div[4]/div/div[3]/section[3]/div/div/button'
+            # description_slider_button_xpath = '//*[@id="navigation-target-description"]/div/button'
+            # button = WebDriverWait(driver=driver, timeout=10).until(EC.element_to_be_clickable((By.XPATH, description_slider_button_xpath)))
+            element = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, description_slider_button_xpath)))
+
+            # Re-parse page source to scrape the items.
+
+
+            # Click on the element
+            driver.execute_script("arguments[0].click();", element)
+
+
+            # button.click()
+            # time.sleep(5)
 
         # WebDriver timeout exception
         except Exception:
             pass
 
+        
+        # Variable that shows Current Price and Original Price.
+        current_product_prices_array = response.xpath('//*[@id="main-content"]/div/div[1]/div[2]/div/div/div').xpath('string()').get().replace('€', '').strip().split()
 
+        # List of images of page product (of the product itself).
+        product_images = response.css('picture[data-testid="pdp-gallery-picture"] img').xpath('@src').extract()
+
+        # Available colors list.
+        available_colors = response.css('div.slider___3D6S9 img::attr(alt)').getall()
+
+        # Available sizes list.
+        available_sizes = response.css('div.sizes___2jQjF > button.gl-label.size___2lbev:not([class*="unavailable"]):not([class*="unavailable-crossed"]) > span::text').getall()
 
         yield {
             
@@ -120,56 +142,45 @@ class MySpider(scrapy.Spider):
             'Product Description': response.css('div.text-content___13aRm p::text').get(),
             # p::text
 
+
+            
+            # Current Product price extraction logic:
+
+            # First, extracts the product price array (1 item if there's no discount),
+            # 2 items if it's discounted.
+            # If the list length is 2, grabs the lowest number.
+            # This assumes the price with the lowest value is the Current Price.
+
+            
             # Extract product current price:
-            # Needs correcting
-            'Current Price': response.css('div.gl-price[data-auto-id="gl-price-item"] > div.gl-price-item::text').getall(),
+            'Current Price': float(current_product_prices_array[0]) if len(current_product_prices_array) == 1 else sorted(list(map(lambda x: float(x.replace(',', '.')), current_product_prices_array)))[0],
 
             # Extract product original price:
-            'Original Price': response.css('div.gl-price[data-auto-id="gl-price-item"] > div.gl-price-item::text').getall(),
+            'Original Price': float(current_product_prices_array[0]) if len(current_product_prices_array) == 1 else sorted(list(map(lambda x: float(x.replace(',', '.')), current_product_prices_array)))[1],
 
             # From the product where you can select a size, says "True" if there is at least
             # one size available.
             # If the product does not have sizes, it says "One-size-fits-all Product"
             # Extract product availability:
-            'Product Availability': bool(response.css('div.sizes___2jQjF > button.gl-label.size___2lbev:not([class*="unavailable"]):not([class*="unavailable-crossed"]) > span::text').getall()) if response.css('div.sizes___2jQjF > button.gl-label.size___2lbev > span::text').getall() != [] else 'One-size-fits-all Product',
+            'Product Availability': bool(available_sizes),
 
             # We'll extract all the link of the PRODUCT ITSELF.
-            # Extract all image URLs from the product page:
-            # 'Image URLs': response.css('img ::attr(src)').getall(),
-            # Needs to be changed
-            'Image URLs': response.css('').getall(),
-
+            # Extract all image URLs (of said product) from the product page:
+            'Image URLs': list(filter(lambda x: 'http' in x, product_images)),
+            
             # All SKUs are present in the product page URL at the end.
             # Extract all SKUs:
             'SKUs': list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall())),
 
 
-            # Extract available colors for the product:
-            'Colors': response.css('div.slider___3D6S9 img::attr(alt)').getall(),
+            # Extract available colors. 
+            'Available Colors': list(map(lambda x: x.replace("Color del artículo: ", ""), available_colors)),
 
             # Extract all available sizes:
-            # The available size CSS selector needs to be corrected, as it
-            # not discard non-available items.
+            'Available Sizes': available_sizes,
 
-            # Alternative selector:
-            # response.css('button.gl-label.size___2lbev:not(.size-selector__size--unavailable) span::text').getall()
-            # 'Available sizes': response.css('.gl-label.size___2lbev span::text').getall(),
-            'Available Sizes': response.css('div.sizes___2jQjF > button.gl-label.size___2lbev:not([class*="unavailable"]):not([class*="unavailable-crossed"]) > span::text').getall(),
-
-            # The following CSS selector is supposed to select all
-            # colors, but for some reason it only selects one of them
-            'Available colors': response.css('div.slider___3D6S9 img::attr(alt)').getall(),
-
-                        
-
-            # Need to implement logic based on the number of items
-            # under the div class "gl-price gl-price--horizontal notranslate"
-            # 'Original Price': 
-
-            
             # Extract breadcrumbs:
             'Breadcrumbs': [s for s in response.css('ol[data-auto-id="breadcrumbs-mobile"] span:not([aria-hidden="true"])::text').getall() if "Atrás" not in s and s != "/"]
-            # Previous code : 'Breadcrumbs': response.css('.breadcrumb_item___32Yik a span::text').getall()
             
         }
 

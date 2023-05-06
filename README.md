@@ -18,16 +18,17 @@ In order to build the scraper, we need to consider the following elements:
         
     * **Product brand.**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following contant value:
 
         `Adidas`
 
+        As every product is branded as "Adidas", this value is a constant.
 
     * **Product description.**
 
         On the product page, we'll find the data using the following CSS selector:
 
-        `response.css('.text-content___13aRm')`
+        `response.css('div.text-content___13aRm p::text').get()`
 
         (This selector needs to be modified)
 
@@ -38,42 +39,44 @@ In order to build the scraper, we need to consider the following elements:
 
     * **Product current price.**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
-        `response.css('.gl-price-item.notranslate ::text').get()`
-
-        We need to implement additional logic to check if there are 1 or two prices.
-        Depending on the number of prices, we'll decide if it's a "original price" or a "current price".
+        `current_product_prices_array = response.xpath('//*[@id="main-content"]/div/div[1]/div[2]/div/div/div').xpath('string()').get().replace('€', '').strip().split()`
+        
+        `float(current_product_prices_array[0]) if len(current_product_prices_array) == 1 else sorted(list(map(lambda x: float(x.replace(',', '.')), current_product_prices_array)))[0]`
 
 
 
     * **Product original price.**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
-        `response.css('.gl-price-item.notranslate ::text').get()`
+        `current_product_prices_array = response.xpath('//*[@id="main-content"]/div/div[1]/div[2]/div/div/div').xpath('string()').get().replace('€', '').strip().split()`
 
-        We need to implement additional logic to check if there are 1 or two prices.
-        Depending on the number of prices, we'll decide if it's a "original price" or a "current price".
+        `float(current_product_prices_array[0]) if len(current_product_prices_array) == 1 else sorted(list(map(lambda x: float(x.replace(',', '.')), current_product_prices_array)))[1]`
 
 
     * **Product availability.**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
-        ``
+        `available_sizes = response.css('div.sizes___2jQjF > button.gl-label.size___2lbev:not([class*="unavailable"]):not([class*="unavailable-crossed"]) > span::text').getall()`
+
+        `bool(available_sizes)`
 
 
     * **A list of all the image URLs.**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
-        `response.css('img ::attr(src)').getall()`
+        `product_images = response.css('picture[data-testid="pdp-gallery-picture"] img').xpath('@src').extract()`
+
+        `list(filter(lambda x: 'http' in x, product_images))`
 
 
     * **A unique Identifier for each product (SKU).**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
         `list(map(lambda href: href.split('/')[-1].replace('.html', ''), response.css('.slider___3D6S9 a::attr(href)').getall()))`
 
@@ -82,9 +85,11 @@ In order to build the scraper, we need to consider the following elements:
 
     * **All available colors for the product.**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
-        `response.css('div.slider___3D6S9 img::attr(alt)').getall()`
+        `available_colors = response.css('div.slider___3D6S9 img::attr(alt)').getall()`
+
+        `list(map(lambda x: x.replace("Color del artículo: ", ""), available_colors))`
 
 
     * **All available sizes for the product.**
@@ -96,9 +101,9 @@ In order to build the scraper, we need to consider the following elements:
 
     * **Category paths leading to the product (e.g. Women > Footwear > Running).**
 
-        On the product page, we'll find the data using the following CSS selector:
+        On the product page, we'll find the data using the following code (it includes CSS selector):
 
-        `response.css('.breadcrumb_item___32Yik a span::text').getall()`
+        `[s for s in response.css('ol[data-auto-id="breadcrumbs-mobile"] span:not([aria-hidden="true"])::text').getall() if "Atrás" not in s and s != "/"]`
 
         The output needs some cleaning, as there are duplicates in the results.
 
